@@ -1,15 +1,20 @@
 import React, { Component } from 'react';
 import { AuthConsumer } from "../../providers/AuthProvider";
 import { Form, Grid, Image, Container, Divider, Header, Button, } from 'semantic-ui-react';
+import Dropzone from 'react-dropzone';
 
 const defaultImage = 'https://d30y9cdsu7xlg0.cloudfront.net/png/15724-200.png';
 
 class Profile extends Component {
-  state = { editing: false, formValues: { name: '', email: '', }, };
+  state = { editing: false, formValues: { name: '', email: '', file: '' }, };
   
   componentDidMount() {
     const { auth: { user: { name, email, }, } } = this.props;
     this.setState({ formValues: { name, email, } });
+  }
+
+  onDrop = (files) => {
+    this.setState({ formValues: { ...this.state.formValues, file: files[0] }})
   }
   
   toggleEdit = () => {
@@ -40,13 +45,48 @@ class Profile extends Component {
       </>
     )
   }
+
+  handleSubmit = (e) => {
+    e.preventDefault();
+    const { formValues: { name, email, file }} = this.state;
+    const { user, updateUser } = this.props.auth
+    updateUser(user.id, { name, email, file })
+    this.setState({
+      editing: false,
+      formValues: {
+        ...this.state.formValues,
+        file: ''
+      }
+    })
+  }
   
   editView = () => {
     const { auth: { user }, } = this.props;
-    const { formValues: { name, email } } = this.state;
+    const { formValues: { name, email, file } } = this.state;
     return (
       <Form onSubmit={this.handleSubmit}>
         <Grid.Column width={4}>
+          <Dropzone
+            onDrop={this.onDrop}
+            multiple={false}
+          >
+            { ({ getRootProps, getInputProps, isDragActive }) => {
+              return(
+                <div  
+                  { ...getRootProps() }
+                  style={styles.dropzone}
+                >
+                  <input {...getInputProps()} />
+                  {
+                    isDragActive ?
+                      <p>Drop image here...</p>
+                    :
+                      <p>Try dropping it here or click to select</p>
+                  }
+                </div>
+              )
+            }}
+          </Dropzone>
         </Grid.Column>
         <Grid.Column width={8}>
           <Form.Input
